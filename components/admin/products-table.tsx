@@ -10,6 +10,7 @@ import { Edit, MoreHorizontal, Plus, Trash } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { ProductFormModal } from "@/components/admin/product-form-modal"
+import { SupabaseProductRepository } from "@/infrastructure"
 import type { Database } from "@/lib/database.types"
 
 type ProductWithRelations = Database["public"]["Tables"]["products"]["Row"] & {
@@ -25,7 +26,7 @@ export function ProductsTable() {
   const [formOpen, setFormOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<ProductWithRelations | null>(null)
   const { toast } = useToast()
-  const supabase = createClient()
+  const productRepo = SupabaseProductRepository.forBrowser()
 
   useEffect(() => {
     fetchProducts()
@@ -33,25 +34,16 @@ export function ProductsTable() {
 
   async function fetchProducts() {
     setLoading(true)
-    const { data, error } = await supabase.from("products").select(`
-        *,
-        categories (
-          name
-        ),
-        knasta_prices (
-          price
-        )
-      `)
-
-    if (error) {
+    try {
+      const result = await productRepo.findAll({ limit: 100 })
+      setProducts(result.data as ProductWithRelations[])
+    } catch (error) {
       console.error("Error fetching products:", error)
       toast({
         title: "Error",
         description: "No se pudieron cargar los productos",
         variant: "destructive",
       })
-    } else {
-      setProducts((data as ProductWithRelations[]) || [])
     }
     setLoading(false)
   }

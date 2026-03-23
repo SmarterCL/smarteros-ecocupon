@@ -6,9 +6,9 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Edit, MoreHorizontal, Plus, Trash } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { CategoryFormModal } from "@/components/admin/category-form-modal"
+import { SupabaseCategoryRepository } from "@/infrastructure"
 import type { Database } from "@/lib/database.types"
 
 type CategoryWithCount = Database["public"]["Tables"]["categories"]["Row"] & {
@@ -22,7 +22,7 @@ export function CategoriesTable() {
   const [formOpen, setFormOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<CategoryWithCount | null>(null)
   const { toast } = useToast()
-  const supabase = createClient()
+  const categoryRepo = SupabaseCategoryRepository.forBrowser()
 
   useEffect(() => {
     fetchCategories()
@@ -30,32 +30,16 @@ export function CategoriesTable() {
 
   async function fetchCategories() {
     setLoading(true)
-    const { data, error } = await supabase.from("categories").select("*")
-
-    if (error) {
+    try {
+      const result = await categoryRepo.findAllWithProductCount()
+      setCategories(result as CategoryWithCount[])
+    } catch (error) {
       console.error("Error fetching categories:", error)
       toast({
         title: "Error",
         description: "No se pudieron cargar las categorías",
         variant: "destructive",
       })
-    } else {
-      // Get product counts for each category
-      const categoriesWithCounts = await Promise.all(
-        (data || []).map(async (category) => {
-          const { count } = await supabase
-            .from("products")
-            .select("*", { count: "exact", head: true })
-            .eq("category_id", category.id)
-
-          return {
-            ...category,
-            productCount: count || 0,
-          }
-        }),
-      )
-
-      setCategories(categoriesWithCounts as CategoryWithCount[])
     }
     setLoading(false)
   }

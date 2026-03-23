@@ -7,46 +7,30 @@ import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ProductCoupon } from "@/components/product-coupon"
-import { createClient } from "@/lib/supabase/server"
+import { ProductService } from "@/application"
+import { PriceComparisonService } from "@/domains/pricing"
 import { formatPrice } from "@/lib/utils"
-import type { Database } from "@/lib/database.types"
-
-type Category = Database["public"]["Tables"]["categories"]["Row"]
-type Product = Database["public"]["Tables"]["products"]["Row"]
-type KnastaPrice = Database["public"]["Tables"]["knasta_prices"]["Row"]
-type ProductSpec = Database["public"]["Tables"]["product_specs"]["Row"]
-
-type ProductDetails = Product & {
-  categoryName: string
-  categorySlug: string
-  specs: ProductSpec[]
-  knastaPrice: KnastaPrice | null
-}
 
 interface ProductPageProps {
   params: Promise<{ id: string }>
 }
 
 async function getProductDetails(id: string) {
-  const supabase = await createClient()
+  const productService = new ProductService()
+  const product = await productService.getProductById(id)
+  
+  if (!product) return null
 
-  const { data: product, error } = await supabase.from("products").select("*").eq("id", id).single()
-  if (error || !product) return null
-
-  const { data: category } = await supabase.from("categories").select("*").eq("id", product.category_id).single()
-  if (!category) return null
-
-  const { data: specs } = await supabase.from("product_specs").select("*").eq("product_id", id)
-  const { data: prices } = await supabase.from("knasta_prices").select("*").eq("product_id", id)
-  const knastaPrice = prices && prices.length > 0 ? (prices[0] as KnastaPrice) : null
-
+  // TODO: Obtener categoría y specs desde sus respectivos servicios
+  // Por ahora usamos la estructura simple del dominio Product
+  
   return {
-    ...(product as Product),
-    categoryName: (category as Category).name,
-    categorySlug: (category as Category).slug,
-    specs: (specs as ProductSpec[]) ?? [],
-    knastaPrice,
-  } as ProductDetails
+    ...product,
+    categoryName: "Categoría", // TODO: obtener desde category service
+    categorySlug: "all", // TODO: obtener desde category service
+    specs: [], // TODO: obtener desde specs service
+    knastaPrice: null, // TODO: obtener desde pricing service
+  }
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
@@ -55,10 +39,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   if (!product) notFound()
 
-  const discount =
-    product.knastaPrice && product.knastaPrice.price < product.price
-      ? Math.round(((product.price - product.knastaPrice.price) / product.price) * 100)
-      : 0
+  // Calcular descuento usando domain service
+  const discount = product.knastaPrice?.price && product.knastaPrice.price < product.price
+    ? PriceComparisonService.calculateSavings(
+        { value: product.knastaPrice.price, currency: 'CLP' } as any,
+        { value: product.price, currency: 'CLP' } as any
+      ).discountPercent
+    : 0
 
   const savings = product.knastaPrice ? product.price - product.knastaPrice.price : 0
 
@@ -77,118 +64,97 @@ export default async function ProductPage({ params }: ProductPageProps) {
         {/* Image */}
         <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-muted">
           <Image
-            src={product.image || "/placeholder.svg?height=500&width=500"}
+            src={product.imageUrl || "/placeholder.svg?height=500&width=500"}
             alt={product.name}
             fill
-            className="object-contain p-4 sm:p-8"
+            className="object-contain p-4"
+            sizes="(max-width: 768px) 100vw, 50vw"
             priority
-            sizes="(max-width: 1024px) 100vw, 50vw"
           />
-          {discount > 0 && (
-            <Badge className="absolute left-3 top-3 bg-primary px-3 py-1 text-sm text-primary-foreground sm:text-base">
-              -{discount}%
-            </Badge>
-          )}
         </div>
 
-        {/* Details */}
+        {/* Info */}
         <div className="flex flex-col">
-          <span className="mb-1 text-xs uppercase tracking-wider text-muted-foreground sm:text-sm">
-            {product.categoryName}
-          </span>
-          <h1 className="mb-3 text-xl font-bold sm:text-2xl lg:text-3xl">{product.name}</h1>
-
-          {/* Price */}
           <div className="mb-4">
-            {product.knastaPrice && discount > 0 ? (
-              <div className="flex flex-col gap-1">
-                <span className="text-sm text-muted-foreground line-through sm:text-base">
-                  ${formatPrice(product.price)}
-                </span>
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl font-bold sm:text-3xl">
-                    ${formatPrice(product.knastaPrice.price)}
-                  </span>
-                  <Badge variant="secondary" className="bg-primary/10 text-primary">
-                    Ahorras ${formatPrice(savings)}
-                  </Badge>
-                </div>
-              </div>
-            ) : (
-              <span className="text-2xl font-bold sm:text-3xl">${formatPrice(product.price)}</span>
-            )}
+            <Badge variant="secondary" className="mb-3">
+              {product.categoryName}
+            </Badge>
+            <h1 className="mb-3 text-2xl font-bold sm:text-3xl">{product.name}</h1>
+            <p className="text-sm text-muted-foreground sm:text-base">{product.description}</p>
           </div>
 
-          <p className="mb-6 text-sm leading-relaxed text-muted-foreground sm:text-base">
-            {product.description}
-          </p>
+          <Separator className="my-4" />
 
-          {/* Price comparison */}
-          {product.knastaPrice && discount > 0 && (
-            <Card className="mb-4">
-              <CardContent className="p-4">
-                <h3 className="mb-3 text-sm font-semibold sm:text-base">Comparacion de precios</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Precio regular</span>
-                    <span className="font-medium">${formatPrice(product.price)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Precio EcoCupon</span>
-                    <span className="font-medium">${formatPrice(product.knastaPrice.price)}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between">
-                    <span className="font-medium">Tu ahorro</span>
-                    <span className="font-bold text-primary">
-                      -${formatPrice(savings)} ({discount}%)
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {/* Pricing */}
+          <div className="mb-6">
+            <div className="mb-2 flex items-baseline gap-3">
+              <span className="text-3xl font-bold text-primary">
+                ${formatPrice(product.knastaPrice?.price ?? product.price)}
+              </span>
+              {product.knastaPrice && product.knastaPrice.price < product.price && (
+                <>
+                  <span className="text-lg text-muted-foreground line-through">
+                    ${formatPrice(product.price)}
+                  </span>
+                  <Badge className="bg-primary text-primary-foreground">
+                    -{discount}%
+                  </Badge>
+                </>
+              )}
+            </div>
+            {savings > 0 && (
+              <p className="text-sm text-muted-foreground">
+                Ahorras: <span className="font-medium text-primary">${formatPrice(savings)}</span>
+              </p>
+            )}
+          </div>
 
           {/* Coupon */}
-          {discount > 0 && <ProductCoupon product={product} discount={discount} />}
+          {discount > 0 && (
+            <ProductCoupon
+              product={{
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                knastaPrice: product.knastaPrice ? { price: product.knastaPrice.price } : null,
+              }}
+              discount={discount}
+            />
+          )}
 
-          {/* Action buttons */}
-          <div className="mt-4 flex gap-3">
-            {product.knastaPrice?.url ? (
-              <Button asChild className="flex-1 gap-2">
-                <a href={product.knastaPrice.url} target="_blank" rel="noopener noreferrer">
-                  <ShoppingCart className="h-4 w-4" />
-                  Comprar
-                </a>
-              </Button>
-            ) : (
-              <Button className="flex-1 gap-2">
-                <ShoppingCart className="h-4 w-4" />
-                Comprar
-              </Button>
-            )}
-            <Button variant="outline" size="icon">
-              <Share2 className="h-4 w-4" />
-              <span className="sr-only">Compartir</span>
+          {/* Actions */}
+          <div className="mt-auto flex gap-3">
+            <Button size="lg" className="flex-1">
+              <ShoppingCart className="mr-2 h-5 w-5" />
+              Ir a la tienda
+            </Button>
+            <Button size="lg" variant="outline">
+              <Share2 className="h-5 w-5" />
             </Button>
           </div>
-
-          {/* Specs */}
-          {product.specs.length > 0 && (
-            <div className="mt-6 sm:mt-8">
-              <h3 className="mb-3 text-sm font-semibold sm:text-base">Especificaciones</h3>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {product.specs.map((spec: any) => (
-                  <div key={spec.id} className="flex justify-between rounded-md bg-muted/50 px-3 py-2 text-sm">
-                    <span className="text-muted-foreground">{spec.name}</span>
-                    <span className="font-medium">{spec.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Specs */}
+      {product.specs && product.specs.length > 0 && (
+        <section className="mt-10">
+          <h2 className="mb-4 text-xl font-bold">Especificaciones</h2>
+          <Card>
+            <CardContent className="p-0">
+              <table className="w-full text-sm">
+                <tbody>
+                  {product.specs.map((spec, index) => (
+                    <tr key={index} className="border-t">
+                      <td className="py-3 font-medium text-muted-foreground">{spec.name}</td>
+                      <td className="py-3 text-right">{spec.value}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
+        </section>
+      )}
     </div>
   )
 }

@@ -4,52 +4,9 @@ import { Badge } from "@/components/ui/badge"
 import { ArrowRight, Zap, Monitor, Shirt, Home } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/server"
 import { formatPrice } from "@/lib/utils"
-import { logError } from "@/lib/logger"
-import type { Database } from "@/lib/database.types"
-
-type Category = Database["public"]["Tables"]["categories"]["Row"]
-type Product = Database["public"]["Tables"]["products"]["Row"]
-type KnastaPrice = Database["public"]["Tables"]["knasta_prices"]["Row"]
-
-type EnrichedProduct = Product & {
-  knastaPrice: KnastaPrice | null
-  category: { name: string; slug: string }
-}
-
-async function getCategories() {
-  const supabase = await createClient()
-  const { data, error } = await supabase.from("categories").select("*")
-  if (error) {
-    logError("HomePage:getCategories", "Error fetching categories", error)
-    return []
-  }
-  return (data as Category[]) ?? []
-}
-
-async function getDiscountedProducts() {
-  const supabase = await createClient()
-
-  const { data: products, error } = await supabase
-    .from("products")
-    .select("*, category:categories(name, slug), knasta_prices(*)")
-    .order("created_at", { ascending: false })
-
-  if (error || !products) {
-    logError("HomePage:getDiscountedProducts", "Error fetching products", error)
-    return []
-  }
-
-  return (products as any[]).filter((p) => {
-    const knastaPrice = p.knasta_prices?.[0]
-    return knastaPrice && knastaPrice.price < p.price
-  }).map((p) => ({
-    ...p,
-    knastaPrice: p.knasta_prices?.[0] || null,
-    category: p.category || { name: "General", slug: "all" },
-  })) as EnrichedProduct[]
-}
+import { CatalogService } from "@/application"
+import { PriceComparisonService } from "@/domains/pricing"
 
 const CATEGORY_ICONS = [
   { slug: "all", label: "Ofertas de hoy", icon: Zap, color: "bg-primary", desc: "Las bajadas de precio de las últimas horas" },
@@ -58,8 +15,29 @@ const CATEGORY_ICONS = [
   { slug: "home", label: "Hogar", icon: Home, color: "bg-amber-600", desc: "Descuentos en productos para el hogar" },
 ] as const
 
+async function getHomePageData() {
+  const catalogService = new CatalogService()
+  
+  const [categories, productsResult] = await Promise.all([
+    catalogService.getCategoriesWithProductCount(),
+    catalogService.getHomeProducts(20),
+  ])
+
+  // Filtrar productos con descuento usando domain service
+  const discountedProducts = productsResult.data.filter((product) => {
+    if (!product.knasta_prices || product.knasta_prices.length === 0) return false
+    const knastaPrice = product.knasta_prices[0].price
+    return knastaPrice < product.price
+  })
+
+  return {
+    categories,
+    products: discountedProducts,
+  }
+}
+
 export default async function HomePage() {
-  const [categories, products] = await Promise.all([getCategories(), getDiscountedProducts()])
+  const { categories, products } = await getHomePageData()
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-4 sm:py-8">
@@ -99,8 +77,12 @@ export default async function HomePage() {
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {products.map((product) => {
-              const discount = product.knastaPrice
-                ? Math.round(((product.price - product.knastaPrice.price) / product.price) * 100)
+              const knastaPrice = product.knasta_prices?.[0]?.price
+              const discount = knastaPrice 
+                ? PriceComparisonService.calculateSavings(
+                    { value: knastaPrice, currency: 'CLP' } as any,
+                    { value: product.price, currency: 'CLP' } as any
+                  ).discountPercent
                 : 0
 
               return (
@@ -122,7 +104,7 @@ export default async function HomePage() {
                     </div>
                     <CardContent className="flex flex-1 flex-col p-2.5 sm:p-4">
                       <span className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground sm:text-xs">
-                        {product.category.name}
+                        {product.categories?.name || "General"}
                       </span>
                       <h3 className="mb-2 line-clamp-2 text-xs font-medium leading-snug group-hover:underline sm:text-sm">
                         {product.name}
@@ -132,7 +114,7 @@ export default async function HomePage() {
                           ${formatPrice(product.price)}
                         </span>
                         <span className="text-base font-bold sm:text-lg">
-                          ${formatPrice(product.knastaPrice?.price ?? product.price)}
+                          ${formatPrice(knastaPrice ?? product.price)}
                         </span>
                       </div>
                     </CardContent>
