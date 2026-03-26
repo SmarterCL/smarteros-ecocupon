@@ -1,11 +1,9 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import '@/styles/globals.css'
 
 export const metadata: Metadata = {
   title: 'EcoCupon.cl',
   description: 'Plataforma de cupones ecológicos',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=5',
-  themeColor: '#16a34a',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -14,6 +12,13 @@ export const metadata: Metadata = {
   formatDetection: {
     telephone: false,
   },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: '#16a34a',
 }
 
 export default function RootLayout({
