@@ -8,7 +8,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Edit, MoreHorizontal, Plus, Trash } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { CategoryFormModal } from "@/components/admin/category-form-modal"
-import { SupabaseCategoryRepository } from "@/infrastructure"
+import { BrowserCategoryRepository } from "@/infrastructure/supabase/category-repository.browser"
+import { createClient } from "@/lib/supabase/client"
 import type { Database } from "@/lib/database.types"
 
 type CategoryWithCount = Database["public"]["Tables"]["categories"]["Row"] & {
@@ -22,7 +23,7 @@ export function CategoriesTable() {
   const [formOpen, setFormOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<CategoryWithCount | null>(null)
   const { toast } = useToast()
-  const categoryRepo = SupabaseCategoryRepository.forBrowser()
+  const categoryRepo = new BrowserCategoryRepository()
 
   useEffect(() => {
     fetchCategories()
@@ -32,7 +33,7 @@ export function CategoriesTable() {
     setLoading(true)
     try {
       const result = await categoryRepo.findAllWithProductCount()
-      setCategories(result as CategoryWithCount[])
+      setCategories(result as unknown as CategoryWithCount[])
     } catch (error) {
       console.error("Error fetching categories:", error)
       toast({
@@ -61,6 +62,7 @@ export function CategoriesTable() {
   }
 
   const deleteCategory = async (id: string) => {
+    const supabase = createClient()
     const { error } = await supabase.from("categories").delete().eq("id", id)
 
     if (error) {

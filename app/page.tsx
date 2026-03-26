@@ -25,9 +25,9 @@ async function getHomePageData() {
 
   // Filtrar productos con descuento usando domain service
   const discountedProducts = productsResult.data.filter((product) => {
-    if (!product.knasta_prices || product.knasta_prices.length === 0) return false
-    const knastaPrice = product.knasta_prices[0].price
-    return knastaPrice < product.price
+    if (!product.knastaPrices || product.knastaPrices.length === 0) return false
+    const knastaPrice = product.knastaPrices[0].price
+    return knastaPrice < product.price.value
   })
 
   return {
@@ -77,8 +77,8 @@ export default async function HomePage() {
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {products.map((product) => {
-              const knastaPrice = product.knasta_prices?.[0]?.price
-              const discount = knastaPrice 
+              const knastaPrice = product.knastaPrices?.[0]?.price
+              const discount = knastaPrice
                 ? PriceComparisonService.calculateSavings(
                     { value: knastaPrice, currency: 'CLP' } as any,
                     { value: product.price, currency: 'CLP' } as any
@@ -90,7 +90,7 @@ export default async function HomePage() {
                   <Card className="flex h-full flex-col overflow-hidden transition-shadow hover:shadow-md">
                     <div className="relative aspect-square bg-muted">
                       <Image
-                        src={product.image || "/placeholder.svg?height=300&width=300"}
+                        src={product.imageUrl?.value || "/placeholder.svg?height=300&width=300"}
                         alt={product.name}
                         fill
                         className="object-contain p-3"
@@ -104,17 +104,17 @@ export default async function HomePage() {
                     </div>
                     <CardContent className="flex flex-1 flex-col p-2.5 sm:p-4">
                       <span className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground sm:text-xs">
-                        {product.categories?.name || "General"}
+                        {product.categoryName || "General"}
                       </span>
                       <h3 className="mb-2 line-clamp-2 text-xs font-medium leading-snug group-hover:underline sm:text-sm">
                         {product.name}
                       </h3>
                       <div className="mt-auto">
                         <span className="block text-xs text-muted-foreground line-through">
-                          ${formatPrice(product.price)}
+                          ${formatPrice(product.price.value)}
                         </span>
                         <span className="text-base font-bold sm:text-lg">
-                          ${formatPrice(knastaPrice ?? product.price)}
+                          ${formatPrice(knastaPrice ?? product.price.value)}
                         </span>
                       </div>
                     </CardContent>
@@ -134,7 +134,7 @@ export default async function HomePage() {
               <Card className="group overflow-hidden transition-shadow hover:shadow-md">
                 <div className="relative h-32 w-full bg-muted sm:h-44">
                   <Image
-                    src={cat.image || "/placeholder.svg?height=300&width=500"}
+                    src={cat.imageUrl || "/placeholder.svg?height=300&width=500"}
                     alt={cat.name}
                     fill
                     className="object-cover"

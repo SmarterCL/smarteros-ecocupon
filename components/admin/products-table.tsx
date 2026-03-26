@@ -10,12 +10,12 @@ import { Edit, MoreHorizontal, Plus, Trash } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { ProductFormModal } from "@/components/admin/product-form-modal"
-import { SupabaseProductRepository } from "@/infrastructure"
+import { BrowserProductRepository } from "@/infrastructure/supabase/product-repository.browser"
 import type { Database } from "@/lib/database.types"
 
 type ProductWithRelations = Database["public"]["Tables"]["products"]["Row"] & {
   categories: { name: string } | null
-  knasta_prices: { price: number }[]
+  knastaPrices: { price: number }[]
 }
 
 export function ProductsTable() {
@@ -26,7 +26,7 @@ export function ProductsTable() {
   const [formOpen, setFormOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<ProductWithRelations | null>(null)
   const { toast } = useToast()
-  const productRepo = SupabaseProductRepository.forBrowser()
+  const productRepo = new BrowserProductRepository()
 
   useEffect(() => {
     fetchProducts()
@@ -36,7 +36,7 @@ export function ProductsTable() {
     setLoading(true)
     try {
       const result = await productRepo.findAll({ limit: 100 })
-      setProducts(result.data as ProductWithRelations[])
+      setProducts(result.data as unknown as ProductWithRelations[])
     } catch (error) {
       console.error("Error fetching products:", error)
       toast({
@@ -85,6 +85,7 @@ export function ProductsTable() {
   const deleteSelectedProducts = async () => {
     if (!selectedProducts.length) return
 
+    const supabase = createClient()
     const { error } = await supabase.from("products").delete().in("id", selectedProducts)
 
     if (error) {
@@ -162,7 +163,7 @@ export function ProductsTable() {
             ) : (
               filteredProducts.map((product) => {
                 const knastaPrice =
-                  product.knasta_prices && product.knasta_prices.length > 0 ? product.knasta_prices[0].price : null
+                  product.knastaPrices && product.knastaPrices.length > 0 ? product.knastaPrices[0].price : null
 
                 const priceDifference =
                   knastaPrice !== null ? Math.round(((product.price - knastaPrice) / product.price) * 100) : null

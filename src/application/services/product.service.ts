@@ -9,6 +9,7 @@
 import { SupabaseProductRepository } from '@/infrastructure'
 import { SupabaseCategoryRepository } from '@/infrastructure'
 import type { Product, CategoryId } from '@/ddd'
+import { ImageUrl } from '@/ddd'
 
 /**
  * Servicio de Aplicación para Productos
@@ -44,7 +45,7 @@ export class ProductService {
       name: params.name,
       description: params.description,
       price: { value: params.price, currency: 'CLP', toString: () => `$${params.price.toLocaleString('es-CL')}` } as any,
-      imageUrl: params.imageUrl,
+      imageUrl: params.imageUrl ? ImageUrl.create(params.imageUrl) : null,
       categoryId: params.categoryId,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -64,7 +65,7 @@ export class ProductService {
     categoryId: CategoryId
   }>): Promise<Product> {
     const existing = await this.productRepo.findById(id)
-    
+
     if (!existing) {
       throw new Error('Producto no encontrado')
     }
@@ -73,10 +74,10 @@ export class ProductService {
       ...existing,
       name: params.name ?? existing.name,
       description: params.description ?? existing.description,
-      price: params.price !== undefined 
-        ? { value: params.price, currency: 'CLP', toString: () => `$${params.price.toLocaleString('es-CL')}` } as any
+      price: (params.price !== undefined && params.price !== null)
+        ? { value: params.price as number, currency: 'CLP', toString: () => `$${(params.price as number).toLocaleString('es-CL')}` } as any
         : existing.price,
-      imageUrl: params.imageUrl !== undefined ? params.imageUrl : existing.imageUrl,
+      imageUrl: params.imageUrl !== undefined ? (params.imageUrl ? ImageUrl.create(params.imageUrl) : null) : existing.imageUrl,
       categoryId: params.categoryId ?? existing.categoryId,
       updatedAt: new Date(),
     }

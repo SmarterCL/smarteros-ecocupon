@@ -10,10 +10,10 @@
 import { ProductMapper } from '@/domains/product/entities/product'
 import type { Product } from '@/domains/product/entities/product'
 import type { IProductRepository, ProductFilter, PagedResult } from '@/domains/product/repositories/product-repository'
-import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient as createBrowserClient } from '@/lib/supabase/client'
 
-type SupabaseClient = ReturnType<typeof createServerClient> | ReturnType<typeof createBrowserClient>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SupabaseClient = any
 
 /**
  * Implementación del repositorio de productos con Supabase
@@ -21,20 +21,23 @@ type SupabaseClient = ReturnType<typeof createServerClient> | ReturnType<typeof 
 export class SupabaseProductRepository implements IProductRepository {
   private tableName = 'products'
 
-  constructor(private getClient: () => Promise<SupabaseClient>) {}
+  constructor(private getClient: () => Promise<SupabaseClient> | SupabaseClient) {}
 
   /**
-   * Factory method para crear repositorio para server
+   * Factory method para crear repositorio para server (dynamic import para evitar next/headers en client)
    */
   static forServer(): SupabaseProductRepository {
-    return new SupabaseProductRepository(async () => await createServerClient())
+    return new SupabaseProductRepository(async () => {
+      const { createClient } = await import('@/lib/supabase/server')
+      return await createClient()
+    })
   }
 
   /**
    * Factory method para crear repositorio para browser
    */
   static forBrowser(): SupabaseProductRepository {
-    return new SupabaseProductRepository(async () => createBrowserClient())
+    return new SupabaseProductRepository(() => createBrowserClient())
   }
 
   async findAll(filter?: ProductFilter): Promise<PagedResult<Product>> {
@@ -77,7 +80,7 @@ export class SupabaseProductRepository implements IProductRepository {
     }
 
     return {
-      data: (data || []).map((row) => ProductMapper.fromDatabase(row as any)),
+      data: (data || []).map((row: any) => ProductMapper.fromDatabase(row as any)),
       total: count ?? 0,
       limit,
       offset,
@@ -119,7 +122,7 @@ export class SupabaseProductRepository implements IProductRepository {
       return []
     }
 
-    return (data || []).map((row) => ProductMapper.fromDatabase(row as any))
+    return (data || []).map((row: any) => ProductMapper.fromDatabase(row as any))
   }
 
   async search(term: string, limit = 10): Promise<Product[]> {
@@ -136,7 +139,7 @@ export class SupabaseProductRepository implements IProductRepository {
       return []
     }
 
-    return (data || []).map((row) => ProductMapper.fromDatabase(row as any))
+    return (data || []).map((row: any) => ProductMapper.fromDatabase(row as any))
   }
 
   async create(product: Product): Promise<Product> {

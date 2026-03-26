@@ -1,22 +1,21 @@
 /**
  * Domain: Catalog
- * 
+ *
  * Módulo de categorías y catálogo
- * 
+ *
  * @domain catalog
  */
 
-// Entidades y Value Objects
+// Entidades y Value Objects (classes)
 export {
-  Category,
   CategoryFactory,
   CategoryMapper,
   CategorySlugVO,
 } from './entities/category'
 
-// Types puros
+// Types (interfaces y type aliases)
 export type {
-  Category as CategoryType,
+  Category,
   CategoryId,
   CategorySlug,
 } from './entities/category'

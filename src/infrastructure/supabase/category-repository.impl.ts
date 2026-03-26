@@ -10,10 +10,10 @@
 import { CategoryMapper } from '@/domains/catalog/entities/category'
 import type { Category } from '@/domains/catalog/entities/category'
 import type { ICategoryRepository } from '@/domains/catalog/repositories/category-repository'
-import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient as createBrowserClient } from '@/lib/supabase/client'
 
-type SupabaseClient = ReturnType<typeof createServerClient>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SupabaseClient = any
 
 /**
  * Implementación del repositorio de categorías con Supabase
@@ -21,20 +21,23 @@ type SupabaseClient = ReturnType<typeof createServerClient>
 export class SupabaseCategoryRepository implements ICategoryRepository {
   private tableName = 'categories'
 
-  constructor(private getClient: () => Promise<SupabaseClient>) {}
+  constructor(private getClient: () => Promise<SupabaseClient> | SupabaseClient) {}
 
   /**
-   * Factory method para crear repositorio para server
+   * Factory method para crear repositorio para server (dynamic import para evitar next/headers en client)
    */
   static forServer(): SupabaseCategoryRepository {
-    return new SupabaseCategoryRepository(async () => await createServerClient())
+    return new SupabaseCategoryRepository(async () => {
+      const { createClient } = await import('@/lib/supabase/server')
+      return await createClient()
+    })
   }
 
   /**
    * Factory method para crear repositorio para browser
    */
   static forBrowser(): SupabaseCategoryRepository {
-    return new SupabaseCategoryRepository(async () => createServerClient())
+    return new SupabaseCategoryRepository(() => createBrowserClient())
   }
 
   async findAll(): Promise<Category[]> {
@@ -50,7 +53,7 @@ export class SupabaseCategoryRepository implements ICategoryRepository {
       return []
     }
 
-    return (data || []).map((row) => CategoryMapper.fromDatabase(row))
+    return (data || []).map((row: any) => CategoryMapper.fromDatabase(row))
   }
 
   async findById(id: string): Promise<Category | null> {

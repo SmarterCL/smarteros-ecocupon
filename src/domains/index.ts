@@ -1,8 +1,8 @@
 /**
  * Domains - Índice Principal
- * 
+ *
  * Exporta todos los dominios del sistema
- * 
+ *
  * Uso:
  * ```typescript
  * import { Product, IProductRepository } from '@/domains'
@@ -11,7 +11,6 @@
 
 // Product Domain (core exports)
 export {
-  Product,
   Price,
   ImageUrl,
   ProductFactory,
@@ -19,6 +18,7 @@ export {
 } from './product/index'
 
 export type {
+  Product,
   ProductId,
   CategoryId,
   IProductRepository,
@@ -28,13 +28,13 @@ export type {
 
 // Catalog Domain
 export {
-  Category,
   CategoryFactory,
   CategoryMapper,
   CategorySlugVO,
 } from './catalog/index'
 
 export type {
+  Category,
   CategoryId as CatalogCategoryId,
   CategorySlug,
   ICategoryRepository,
@@ -42,15 +42,14 @@ export type {
 
 // Pricing Domain (con aliases para evitar conflictos)
 export {
-  KnastaPrice,
-  KnastaPriceId,
-  ProductUrl,
+  PriceComparisonService,
   KnastaPriceFactory,
   KnastaPriceMapper,
-  PriceComparisonService,
 } from './pricing/index'
 
 export type {
+  KnastaPrice,
+  KnastaPriceId,
   PricingProductId,
   PricingPrice,
   PricingKnastaPriceId,

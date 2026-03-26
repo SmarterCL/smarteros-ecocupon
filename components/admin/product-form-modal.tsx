@@ -44,6 +44,7 @@ export function ProductFormModal({
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [price, setPrice] = useState("")
+  const [plate, setPlate] = useState("")
   const [categoryId, setCategoryId] = useState("")
   const [imageUrl, setImageUrl] = useState("")
   const [categories, setCategories] = useState<Category[]>([])
@@ -63,6 +64,7 @@ export function ProductFormModal({
         setName(product.name)
         setDescription(product.description || "")
         setPrice(product.price.toString())
+        setPlate((product as any).plate || "")
         setCategoryId(product.category_id || "")
         setImageUrl(product.image || "")
       } else {
@@ -84,6 +86,7 @@ export function ProductFormModal({
     setName("")
     setDescription("")
     setPrice("")
+    setPlate("")
     setCategoryId("")
     setImageUrl("")
   }
@@ -108,6 +111,7 @@ export function ProductFormModal({
         name: name.trim(),
         description: description.trim() || null,
         price: Math.round(Number(price)),
+        plate: plate.trim().toUpperCase() || null,
         category_id: categoryId,
         image: imageUrl || null,
       }
@@ -228,6 +232,22 @@ export function ProductFormModal({
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            {/* Placa Patente */}
+            <div className="space-y-2">
+              <Label htmlFor="plate">Placa Patente (opcional)</Label>
+              <Input
+                id="plate"
+                value={plate}
+                onChange={(e) => setPlate(e.target.value)}
+                placeholder="Ej: ABCD-12 o AA-12-34"
+                className="uppercase"
+                maxLength={10}
+              />
+              <p className="text-xs text-muted-foreground">
+                Ingresa la placa patente del vehículo para asociarla al producto
+              </p>
             </div>
           </div>
 

@@ -18,18 +18,18 @@ interface ProductPageProps {
 async function getProductDetails(id: string) {
   const productService = new ProductService()
   const product = await productService.getProductById(id)
-  
+
   if (!product) return null
 
   // TODO: Obtener categoría y specs desde sus respectivos servicios
   // Por ahora usamos la estructura simple del dominio Product
-  
+
   return {
     ...product,
     categoryName: "Categoría", // TODO: obtener desde category service
     categorySlug: "all", // TODO: obtener desde category service
-    specs: [], // TODO: obtener desde specs service
-    knastaPrice: null, // TODO: obtener desde pricing service
+    specs: [] as Array<{ name: string; value: string }>, // TODO: obtener desde specs service
+    knastaPrice: null as { price: number; store: string; url?: string } | null, // TODO: obtener desde pricing service
   }
 }
 
@@ -40,14 +40,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
   if (!product) notFound()
 
   // Calcular descuento usando domain service
-  const discount = product.knastaPrice?.price && product.knastaPrice.price < product.price
+  const discount = product.knastaPrice?.price && product.knastaPrice.price < product.price.value
     ? PriceComparisonService.calculateSavings(
         { value: product.knastaPrice.price, currency: 'CLP' } as any,
-        { value: product.price, currency: 'CLP' } as any
+        { value: product.price.value, currency: 'CLP' } as any
       ).discountPercent
     : 0
 
-  const savings = product.knastaPrice ? product.price - product.knastaPrice.price : 0
+  const savings = product.knastaPrice ? product.price.value - product.knastaPrice.price : 0
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-4 sm:py-8">
@@ -64,7 +64,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         {/* Image */}
         <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-muted">
           <Image
-            src={product.imageUrl || "/placeholder.svg?height=500&width=500"}
+            src={product.imageUrl?.value || "/placeholder.svg?height=500&width=500"}
             alt={product.name}
             fill
             className="object-contain p-4"
@@ -89,12 +89,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <div className="mb-6">
             <div className="mb-2 flex items-baseline gap-3">
               <span className="text-3xl font-bold text-primary">
-                ${formatPrice(product.knastaPrice?.price ?? product.price)}
+                ${formatPrice(product.knastaPrice?.price ?? product.price.value)}
               </span>
-              {product.knastaPrice && product.knastaPrice.price < product.price && (
+              {product.knastaPrice && product.knastaPrice.price < product.price.value && (
                 <>
                   <span className="text-lg text-muted-foreground line-through">
-                    ${formatPrice(product.price)}
+                    ${formatPrice(product.price.value)}
                   </span>
                   <Badge className="bg-primary text-primary-foreground">
                     -{discount}%
@@ -115,7 +115,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               product={{
                 id: product.id,
                 name: product.name,
-                price: product.price,
+                price: product.price.value,
                 knastaPrice: product.knastaPrice ? { price: product.knastaPrice.price } : null,
               }}
               discount={discount}

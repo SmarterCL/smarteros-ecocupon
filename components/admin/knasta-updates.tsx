@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast"
 import type { Database } from "@/lib/database.types"
 
 type ProductWithPrices = Database["public"]["Tables"]["products"]["Row"] & {
-  knasta_prices: {
+  knastaPrices: {
     id: number
     price: number
     url: string | null
@@ -67,7 +67,7 @@ export function KnastaUpdates() {
 
     const updates = products.map((product) => {
       // Simulamos un cambio de precio aleatorio entre -10% y +10%
-      const currentPrice = product.knasta_prices.length > 0 ? product.knasta_prices[0].price : product.price
+      const currentPrice = product.knastaPrices.length > 0 ? product.knastaPrices[0].price : product.price
 
       const priceChange = Math.random() * 0.2 - 0.1 // Entre -10% y +10%
       const newPrice = Math.round(currentPrice * (1 + priceChange))
@@ -76,8 +76,8 @@ export function KnastaUpdates() {
         product_id: product.id,
         price: newPrice,
         url:
-          product.knasta_prices.length > 0 && product.knasta_prices[0].url
-            ? product.knasta_prices[0].url
+          product.knastaPrices.length > 0 && product.knastaPrices[0].url
+            ? product.knastaPrices[0].url
             : `https://knasta.cl/producto/${product.id}`,
         last_updated: new Date().toISOString(),
       }
@@ -107,14 +107,14 @@ export function KnastaUpdates() {
     if (!product) return
 
     // Simulamos un cambio de precio aleatorio entre -10% y +10%
-    const currentPrice = product.knasta_prices.length > 0 ? product.knasta_prices[0].price : product.price
+    const currentPrice = product.knastaPrices.length > 0 ? product.knastaPrices[0].price : product.price
 
     const priceChange = Math.random() * 0.2 - 0.1 // Entre -10% y +10%
     const newPrice = Math.round(currentPrice * (1 + priceChange))
 
     // Generar URL segura
-    const baseUrl = product.knasta_prices.length > 0 && product.knasta_prices[0].url
-      ? product.knasta_prices[0].url
+    const baseUrl = product.knastaPrices.length > 0 && product.knastaPrices[0].url
+      ? product.knastaPrices[0].url
       : `https://knasta.cl/producto/${productId}`
 
     const update = {
@@ -209,7 +209,7 @@ export function KnastaUpdates() {
                 </TableRow>
               ) : (
                 filteredProducts.map((product) => {
-                  const knastaPrice = product.knasta_prices.length > 0 ? product.knasta_prices[0] : null
+                  const knastaPrice = product.knastaPrices.length > 0 ? product.knastaPrices[0] : null
                   const lastUpdated = knastaPrice ? new Date(knastaPrice.last_updated) : null
 
                   return (

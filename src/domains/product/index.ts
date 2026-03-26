@@ -1,23 +1,22 @@
 /**
  * Domain: Product
- * 
+ *
  * Módulo de productos del catálogo
- * 
+ *
  * @domain product
  */
 
-// Entidades y Value Objects
+// Entidades y Value Objects (classes)
 export {
-  Product,
   Price,
   ImageUrl,
   ProductFactory,
   ProductMapper,
 } from './entities/product'
 
-// Types puros
+// Types (interfaces y type aliases)
 export type {
-  Product as ProductType,
+  Product,
   ProductId,
   CategoryId,
 } from './entities/product'

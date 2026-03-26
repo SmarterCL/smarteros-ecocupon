@@ -44,6 +44,7 @@ export interface Database {
           price: number
           image: string | null
           category_id: string | null
+          plate: string | null
           created_at: string
           updated_at: string
         }
@@ -54,6 +55,7 @@ export interface Database {
           price: number
           image?: string | null
           category_id?: string | null
+          plate?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -64,6 +66,7 @@ export interface Database {
           price?: number
           image?: string | null
           category_id?: string | null
+          plate?: string | null
           created_at?: string
           updated_at?: string
         }

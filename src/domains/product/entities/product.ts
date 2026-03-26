@@ -17,8 +17,16 @@ export interface Product {
   readonly price: Price
   readonly imageUrl: ImageUrl | null
   readonly categoryId: CategoryId | null
+  readonly categoryName?: string | null
+  readonly knastaPrices?: readonly KnastaPrice[]
   readonly createdAt: Date
   readonly updatedAt: Date
+}
+
+export interface KnastaPrice {
+  readonly price: number
+  readonly store: string
+  readonly url?: string
 }
 
 /**
@@ -104,6 +112,8 @@ export class ProductFactory {
     price: number
     imageUrl?: string | null
     categoryId?: CategoryId | null
+    categoryName?: string | null
+    knastaPrices?: readonly KnastaPrice[]
     createdAt?: Date
     updatedAt?: Date
   }): Product {
@@ -114,6 +124,8 @@ export class ProductFactory {
       price: Price.create(params.price),
       imageUrl: params.imageUrl ? ImageUrl.create(params.imageUrl) : null,
       categoryId: params.categoryId ?? null,
+      categoryName: params.categoryName ?? null,
+      knastaPrices: params.knastaPrices,
       createdAt: params.createdAt ?? new Date(),
       updatedAt: params.updatedAt ?? new Date(),
     }
@@ -134,6 +146,8 @@ export class ProductMapper {
     price: number
     image: string | null
     category_id: string | null
+    categories?: { name: string } | null
+    knasta_prices?: any[]
     created_at: string
     updated_at: string
   }): Product {
@@ -144,6 +158,12 @@ export class ProductMapper {
       price: row.price,
       imageUrl: row.image,
       categoryId: row.category_id,
+      categoryName: row.categories?.name ?? null,
+      knastaPrices: row.knasta_prices?.map(p => ({
+        price: p.price,
+        store: p.store,
+        url: p.url,
+      })),
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
     })
