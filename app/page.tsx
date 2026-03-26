@@ -16,23 +16,34 @@ const CATEGORY_ICONS = [
 ] as const
 
 async function getHomePageData() {
-  const catalogService = new CatalogService()
-  
-  const [categories, productsResult] = await Promise.all([
-    catalogService.getCategoriesWithProductCount(),
-    catalogService.getHomeProducts(20),
-  ])
+  try {
+    const catalogService = new CatalogService()
+    
+    const [categories, productsResult] = await Promise.all([
+      catalogService.getCategoriesWithProductCount(),
+      catalogService.getHomeProducts(20),
+    ]).catch(err => {
+      console.error('Data fetch error:', err)
+      return [[], { data: [] }]
+    })
 
-  // Filtrar productos con descuento usando domain service
-  const discountedProducts = productsResult.data.filter((product) => {
-    if (!product.knastaPrices || product.knastaPrices.length === 0) return false
-    const knastaPrice = product.knastaPrices[0].price
-    return knastaPrice < product.price.value
-  })
+    // Filtrar productos con descuento usando domain service
+    const discountedProducts = (productsResult as any).data.filter((product: any) => {
+      if (!product.knastaPrices || product.knastaPrices.length === 0) return false
+      const knastaPrice = product.knastaPrices[0].price
+      return knastaPrice < product.price.value
+    })
 
-  return {
-    categories,
-    products: discountedProducts,
+    return {
+      categories: categories as any[],
+      products: discountedProducts,
+    }
+  } catch (error) {
+    console.error('Critical home page error:', error)
+    return {
+      categories: [],
+      products: [],
+    }
   }
 }
 

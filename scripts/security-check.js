@@ -47,7 +47,7 @@ function checkNoHardcodedKeys() {
     'lib/supabase/client.ts',
     'lib/supabase/server.ts',
     'lib/supabase/middleware.ts',
-    'middleware.ts',
+    'proxy.ts',
   ]
 
   let foundHardcoded = false
@@ -106,7 +106,7 @@ checkFile('.env.local', '.env.local exists')
 checkFile('.gitignore', '.gitignore exists')
 checkFile('lib/supabase/client.ts', 'Supabase client')
 checkFile('lib/supabase/server.ts', 'Supabase server')
-checkFile('middleware.ts', 'Middleware')
+checkFile('proxy.ts', 'Proxy Middleware')
 
 console.log('\n🔑 Environment Variables:')
 checkEnvVariable('NEXT_PUBLIC_SUPABASE_URL')
