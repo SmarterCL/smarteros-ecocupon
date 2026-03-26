@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { ImageUploader } from "@/components/ui/image-uploader"
+import { usePlateDetection } from "@/hooks/use-plate-detection"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import type { Database } from "@/lib/database.types"
@@ -53,6 +54,7 @@ export function ProductFormModal({
 
   const { toast } = useToast()
   const supabase = createClient()
+  const { detectPlate, formatPlate, stats, dailyLimit } = usePlateDetection()
 
   const isEditing = !!product
 
@@ -236,18 +238,55 @@ export function ProductFormModal({
 
             {/* Placa Patente */}
             <div className="space-y-2">
-              <Label htmlFor="plate">Placa Patente (opcional)</Label>
-              <Input
-                id="plate"
-                value={plate}
-                onChange={(e) => setPlate(e.target.value)}
-                placeholder="Ej: ABCD-12 o AA-12-34"
-                className="uppercase"
-                maxLength={10}
-              />
+              <div className="flex items-center justify-between">
+                <Label htmlFor="plate">Placa Patente (opcional)</Label>
+                {stats && (
+                  <span className="text-xs text-muted-foreground">
+                    {stats.used}/{dailyLimit} usadas hoy
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  id="plate"
+                  value={plate}
+                  onChange={(e) => setPlate(e.target.value)}
+                  onBlur={() => {
+                    if (plate.trim()) {
+                      const formatted = formatPlate(plate)
+                      if (formatted !== plate) {
+                        setPlate(formatted)
+                      }
+                    }
+                  }}
+                  placeholder="Ej: ABCD-12 o AA-12-34"
+                  className="uppercase flex-1"
+                  maxLength={10}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={async () => {
+                    if (plate.trim()) {
+                      const result = await detectPlate(plate, product?.id)
+                      if (result.success && result.plate) {
+                        setPlate(result.plate)
+                      }
+                    }
+                  }}
+                  disabled={!plate.trim()}
+                >
+                  Validar
+                </Button>
+              </div>
               <p className="text-xs text-muted-foreground">
-                Ingresa la placa patente del vehículo para asociarla al producto
+                Formato chileno: ABCD-12 o AA-12-34 • Límite: {dailyLimit}/día
               </p>
+              {stats && stats.remaining <= 2 && stats.remaining > 0 && (
+                <p className="text-xs text-amber-600">
+                  ⚠️ Te quedan {stats.remaining} validaciones hoy
+                </p>
+              )}
             </div>
           </div>
 
