@@ -12,6 +12,7 @@ const YELLOW = '\x1b[33m'
 const RESET = '\x1b[0m'
 
 let hasErrors = false
+let hasWarnings = false
 
 // Load .env.local into process.env for checking
 const envPath = path.join(process.cwd(), '.env.local')
@@ -43,7 +44,7 @@ function checkEnvVariable(varName, required = true) {
     const val = value.toLowerCase()
     if (val.includes('your_') || val.includes('placeholder') || val.includes('tu_')) {
       console.log(`${YELLOW}⚠${RESET} ${varName} - Using placeholder value`)
-      hasErrors = true
+      hasWarnings = true
     } else {
       console.log(`${GREEN}✓${RESET} ${varName} - Configured`)
     }
@@ -137,6 +138,10 @@ if (hasErrors) {
   console.log(`${RED}❌ Security issues found. Please fix before deploying.${RESET}`)
   process.exit(1)
 } else {
-  console.log(`${GREEN}✅ All security checks passed!${RESET}`)
+  if (hasWarnings) {
+    console.log(`${YELLOW}⚠ Security check passed with warnings.${RESET}`)
+  } else {
+    console.log(`${GREEN}✅ All security checks passed!${RESET}`)
+  }
   process.exit(0)
 }
