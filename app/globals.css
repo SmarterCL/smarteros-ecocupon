@@ -51,6 +51,13 @@ body {
   color: var(--foreground);
   -webkit-font-smoothing: antialiased;
   line-height: 1.5;
+  padding-bottom: 4rem; /* Space for mobile bottom nav */
+}
+
+@media (min-width: 768px) {
+  body {
+    padding-bottom: 0;
+  }
 }
 
 a {

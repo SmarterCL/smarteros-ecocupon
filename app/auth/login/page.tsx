@@ -44,9 +44,9 @@ function LoginForm() {
     const sanitizedEmail = truncateString(email.trim().toLowerCase(), 255)
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ 
-      email: sanitizedEmail, 
-      password 
+    const { error } = await supabase.auth.signInWithPassword({
+      email: sanitizedEmail,
+      password
     })
 
     if (error) {
@@ -56,7 +56,8 @@ function LoginForm() {
       return
     }
 
-    router.push("/")
+    // Redirect to profile page after successful login
+    router.push("/profile")
     router.refresh()
   }
 
