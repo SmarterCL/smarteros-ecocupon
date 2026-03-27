@@ -13,6 +13,18 @@ const RESET = '\x1b[0m'
 
 let hasErrors = false
 
+// Load .env.local into process.env for checking
+const envPath = path.join(process.cwd(), '.env.local')
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf8')
+  envContent.split('\n').forEach(line => {
+    const [key, ...valueParts] = line.split('=')
+    if (key && valueParts.length > 0) {
+      process.env[key.trim()] = valueParts.join('=').trim()
+    }
+  })
+}
+
 function checkFile(filePath, description) {
   const exists = fs.existsSync(path.join(process.cwd(), filePath))
   if (exists) {
@@ -28,7 +40,8 @@ function checkEnvVariable(varName, required = true) {
   const value = process.env[varName]
   if (value) {
     // Check if it's a placeholder
-    if (value.includes('your_') || value.includes('placeholder')) {
+    const val = value.toLowerCase()
+    if (val.includes('your_') || val.includes('placeholder') || val.includes('tu_')) {
       console.log(`${YELLOW}⚠${RESET} ${varName} - Using placeholder value`)
       hasErrors = true
     } else {
