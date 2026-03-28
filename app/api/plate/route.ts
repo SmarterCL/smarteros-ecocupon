@@ -48,14 +48,16 @@ async function fetchPlateInfo(plate: string): Promise<PlateInfo | null> {
 
   try {
     // Boostr.cl API endpoint correcto: GET /vehicle/{plate}.json
+    // Auth: api_key header (no Bearer)
     const url = `https://api.boostr.cl/vehicle/${encodeURIComponent(plate)}.json`
     
     console.log('🔍 Consultando Boostr API:', url)
+    console.log('🔑 API Key presente:', !!apiKey)
     
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'api_key': apiKey,
         'Content-Type': 'application/json'
       }
     })
