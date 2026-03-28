@@ -36,6 +36,7 @@ const DAILY_LIMIT = 10
 
 /**
  * Consulta información de placa patente desde Boostr.cl API
+ * Docs: https://docs.boostr.cl/reference/car-plate
  */
 async function fetchPlateInfo(plate: string): Promise<PlateInfo | null> {
   const apiKey = process.env.BOOTSTR_API_KEY
@@ -46,9 +47,8 @@ async function fetchPlateInfo(plate: string): Promise<PlateInfo | null> {
   }
 
   try {
-    // Boostr.cl API endpoint para consulta de patentes
-    // Endpoint correcto: GET /patente/{patente}
-    const url = `https://api.boostr.cl/patente/${encodeURIComponent(plate)}`
+    // Boostr.cl API endpoint correcto: GET /vehicle/{plate}.json
+    const url = `https://api.boostr.cl/vehicle/${encodeURIComponent(plate)}.json`
     
     console.log('🔍 Consultando Boostr API:', url)
     
