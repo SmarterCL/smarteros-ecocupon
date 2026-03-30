@@ -8,13 +8,17 @@
  * - analizar_placa: Analiza/valida una placa patente (texto o imagen OCR)
  * - registrar_por_placa: Registra reciclaje por placa patente
  * - emitir_cupon: Emite un nuevo cupón de descuento
+ * - registrar_basura: Registra basura/residuos con foto
+ * - listar_cupones_activos: Lista cupones activos
  * 
  * Sin JWT - Comunicación directa en VPS controlado
  */
 
+import 'dotenv/config';
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { createClient } from "@supabase/supabase-js";
+import { z } from "zod";
 
 // Configuración desde variables de entorno
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://uyxvzztnsvfcqmgkrnol.supabase.co";
@@ -37,17 +41,15 @@ const server = new McpServer({
 
 /**
  * Herramienta: validar_qr
- * Valida un código QR de usuario y retorna la información del usuario
  */
 server.tool(
   "validar_qr",
   "Valida un código QR de usuario y retorna la información del usuario asociado",
   {
-    qr_code: { type: "string", description: "El código QR a validar" }
+    qr_code: z.string().describe("El código QR a validar")
   },
   async ({ qr_code }) => {
     try {
-      // Buscar usuario por QR code
       const { data, error } = await supabase
         .from("users")
         .select("id, email, full_name, points, created_at")
@@ -102,14 +104,13 @@ server.tool(
 
 /**
  * Herramienta: consultar_saldo
- * Consulta el saldo de puntos de un usuario
  */
 server.tool(
   "consultar_saldo",
   "Consulta el saldo de puntos de un usuario por su ID o email",
   {
-    user_identifier: { type: "string", description: "ID del usuario o email" },
-    identifier_type: { type: "string", description: "Tipo de identificador: 'id' o 'email'", enum: ["id", "email"] }
+    user_identifier: z.string().describe("ID del usuario o email"),
+    identifier_type: z.enum(["id", "email"]).describe("Tipo de identificador: 'id' o 'email'")
   },
   async ({ user_identifier, identifier_type }) => {
     try {
@@ -169,23 +170,20 @@ server.tool(
 
 /**
  * Herramienta: registrar_reciclaje
- * Registra una transacción de reciclaje y suma puntos al usuario
  */
 server.tool(
   "registrar_reciclaje",
   "Registra una transacción de reciclaje y suma puntos al usuario",
   {
-    user_id: { type: "string", description: "ID del usuario" },
-    material_type: { type: "string", description: "Tipo de material: plastico, vidrio, papel, aluminio, organico" },
-    weight_kg: { type: "number", description: "Peso en kilogramos" },
-    points_to_add: { type: "number", description: "Puntos a sumar (opcional, se calcula si no se proporciona)" }
+    user_id: z.string().describe("ID del usuario"),
+    material_type: z.string().describe("Tipo de material: plastico, vidrio, papel, aluminio, organico"),
+    weight_kg: z.number().describe("Peso en kilogramos"),
+    points_to_add: z.number().optional().describe("Puntos a sumar (opcional, se calcula si no se proporciona)")
   },
   async ({ user_id, material_type, weight_kg, points_to_add }) => {
     try {
-      // Calcular puntos si no se proporcionan (10 puntos por kg por defecto)
       const points = points_to_add ?? Math.round(weight_kg * 10);
 
-      // Registrar transacción de reciclaje
       const { data: transaction, error: transactionError } = await supabase
         .from("recycling_transactions")
         .insert({
@@ -199,13 +197,11 @@ server.tool(
 
       if (transactionError) throw transactionError;
 
-      // Actualizar saldo del usuario
       const { error: updateError } = await supabase.rpc("increment_user_points", {
         user_id,
         points_to_add: points
       });
 
-      // Si no existe la función RPC, actualizar directamente
       if (updateError && updateError.code === "42883") {
         await supabase
           .from("users")
@@ -245,27 +241,24 @@ server.tool(
 
 /**
  * Herramienta: emitir_cupon
- * Emite un nuevo cupón de descuento para un usuario
  */
 server.tool(
   "emitir_cupon",
   "Emite un nuevo cupón de descuento para un usuario",
   {
-    user_id: { type: "string", description: "ID del usuario" },
-    coupon_type: { type: "string", description: "Tipo de cupón: descuento_porcentaje, descuento_fijo, envio_gratis" },
-    value: { type: "number", description: "Valor del cupón (porcentaje o monto fijo)" },
-    min_purchase: { type: "number", description: "Compra mínima requerida (opcional)" },
-    expires_in_days: { type: "number", description: "Días de validez (default: 30)" }
+    user_id: z.string().describe("ID del usuario"),
+    coupon_type: z.string().describe("Tipo de cupón: descuento_porcentaje, descuento_fijo, envio_gratis"),
+    value: z.number().describe("Valor del cupón (porcentaje o monto fijo)"),
+    min_purchase: z.number().optional().describe("Compra mínima requerida (opcional)"),
+    expires_in_days: z.number().optional().describe("Días de validez (default: 30)")
   },
   async ({ user_id, coupon_type, value, min_purchase, expires_in_days }) => {
     try {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + (expires_in_days || 30));
 
-      // Generar código único
       const couponCode = `ECO-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
-      // Insertar cupón
       const { data: coupon, error } = await supabase
         .from("coupons")
         .insert({
@@ -316,13 +309,12 @@ server.tool(
 
 /**
  * Herramienta: listar_cupones_activos
- * Lista los cupones activos de un usuario
  */
 server.tool(
   "listar_cupones_activos",
   "Lista los cupones activos de un usuario",
   {
-    user_id: { type: "string", description: "ID del usuario" }
+    user_id: z.string().describe("ID del usuario")
   },
   async ({ user_id }) => {
     try {
@@ -363,26 +355,22 @@ server.tool(
 
 /**
  * Herramienta: analizar_placa
- * Valida y normaliza una placa patente chilena (texto o resultado OCR)
- * Soporta formatos: ABCD-12, ABC-12, AA-12-34
  */
 server.tool(
   "analizar_placa",
   "Valida y normaliza una placa patente chilena. Retorna el formato normalizado y si es válido.",
   {
-    plate_text: { type: "string", description: "Texto de la placa (ingresado manualmente o desde OCR)" },
-    source: { type: "string", description: "Origen: 'manual' o 'ocr'", enum: ["manual", "ocr"] }
+    plate_text: z.string().describe("Texto de la placa (ingresado manualmente o desde OCR)"),
+    source: z.enum(["manual", "ocr"]).describe("Origen: 'manual' o 'ocr'")
   },
   async ({ plate_text, source }) => {
     try {
-      // Normalizar: uppercase, remover espacios
       const normalized = plate_text.toUpperCase().trim();
       
-      // Patrones de placas chilenas
       const patterns = [
-        { regex: /^([A-Z]{4})(\d{2})$/, format: "ABCD-12", example: "ABCD-12" }, // Patente antigua 4L+2N
-        { regex: /^([A-Z]{3})(\d{2})$/, format: "ABC-12", example: "ABC-12" },   // Patente antigua 3L+2N
-        { regex: /^([A-Z]{2})-?(\d{2})-?(\d{2})$/, format: "AA-12-34", example: "AA-12-34" } // Patente nueva
+        { regex: /^([A-Z]{4})(\d{2})$/, format: "ABCD-12", example: "ABCD-12" },
+        { regex: /^([A-Z]{3})(\d{2})$/, format: "ABC-12", example: "ABC-12" },
+        { regex: /^([A-Z]{2})-?(\d{2})-?(\d{2})$/, format: "AA-12-34", example: "AA-12-34" }
       ];
 
       let validFormat = null;
@@ -393,7 +381,6 @@ server.tool(
         if (match) {
           validFormat = pattern.format;
           
-          // Formatear según el patrón
           if (pattern.format === "ABCD-12") {
             formattedPlate = `${match[1]}-${match[2]}`;
           } else if (pattern.format === "ABC-12") {
@@ -437,24 +424,22 @@ server.tool(
 
 /**
  * Herramienta: registrar_por_placa
- * Registra reciclaje asociado a una placa patente (auto/moto)
  */
 server.tool(
   "registrar_por_placa",
   "Registra un evento de reciclaje asociado a una placa patente de vehículo",
   {
-    plate: { type: "string", description: "Placa patente del vehículo" },
-    material_type: { type: "string", description: "Tipo de material: plastico, vidrio, papel, aluminio, organico, mixto" },
-    weight_kg: { type: "number", description: "Peso en kilogramos (opcional)" },
-    points: { type: "number", description: "Puntos a asignar (default: 100)" },
-    user_id: { type: "string", description: "ID del usuario (opcional si no está autenticado)" }
+    plate: z.string().describe("Placa patente del vehículo"),
+    material_type: z.string().describe("Tipo de material: plastico, vidrio, papel, aluminio, organico, mixto"),
+    weight_kg: z.number().optional().describe("Peso en kilogramos (opcional)"),
+    points: z.number().optional().describe("Puntos a asignar (default: 100)"),
+    user_id: z.string().optional().describe("ID del usuario (opcional si no está autenticado)")
   },
   async ({ plate, material_type, weight_kg, points, user_id }) => {
     try {
-      // Primero validar/normalizar la placa
       const normalized = plate.toUpperCase().trim();
-      
-      // Insertar en recycling_events (tabla específica para eventos con placa)
+      const pointsValue = points || 100;
+
       const { data: event, error } = await supabase
         .from("recycling_events")
         .insert({
@@ -462,7 +447,7 @@ server.tool(
           plate: normalized,
           material_type,
           weight_kg: weight_kg || null,
-          points: points || 100,
+          points_earned: pointsValue,
           status: "completed",
           source: "smartermcp"
         })
@@ -471,11 +456,10 @@ server.tool(
 
       if (error) throw error;
 
-      // Si hay user_id, sumar puntos al usuario
       if (user_id) {
         await supabase
           .from("users")
-          .update({ points: supabase.raw(`points + ${points || 100}`) })
+          .update({ points: supabase.raw(`points + ${pointsValue}`) })
           .eq("id", user_id);
       }
 
@@ -489,7 +473,7 @@ server.tool(
               id: event.id,
               plate: event.plate,
               material_type: event.material_type,
-              points: event.points,
+              points: event.points_earned,
               status: event.status
             }
           })
@@ -512,20 +496,19 @@ server.tool(
 
 /**
  * Herramienta: registrar_basura
- * Registra reciclaje de basura/residuos (sin placa, solo usuario)
  */
 server.tool(
   "registrar_basura",
   "Registra un evento de reciclaje de basura/residuos sin vehículo",
   {
-    user_id: { type: "string", description: "ID del usuario" },
-    material_type: { type: "string", description: "Tipo de material: plastico, vidrio, papel, aluminio, organico, mixto" },
-    weight_kg: { type: "number", description: "Peso en kilogramos" },
-    photo_url: { type: "string", description: "URL de la foto del residuo (opcional)" }
+    user_id: z.string().describe("ID del usuario"),
+    material_type: z.string().describe("Tipo de material: plastico, vidrio, papel, aluminio, organico, mixto"),
+    weight_kg: z.number().describe("Peso en kilogramos"),
+    photo_url: z.string().optional().describe("URL de la foto del residuo (opcional)")
   },
   async ({ user_id, material_type, weight_kg, photo_url }) => {
     try {
-      const points = Math.round(weight_kg * 50); // 50 puntos por kg de basura
+      const points = Math.round(weight_kg * 50);
 
       const { data: event, error } = await supabase
         .from("recycling_events")
@@ -534,7 +517,7 @@ server.tool(
           material_type,
           weight_kg,
           photo_url: photo_url || null,
-          points,
+          points_earned: points,
           status: "completed",
           source: "smartermcp_basura"
         })
@@ -543,7 +526,6 @@ server.tool(
 
       if (error) throw error;
 
-      // Sumar puntos al usuario
       await supabase
         .from("users")
         .update({ points: supabase.raw(`points + ${points}`) })
@@ -559,7 +541,7 @@ server.tool(
               id: event.id,
               material_type: event.material_type,
               weight_kg: event.weight_kg,
-              points: event.points
+              points: event.points_earned
             }
           })
         }]
