@@ -1,0 +1,31 @@
+# OAuth Google + AI Studio Configuration
+# Copy to: /root/smarteros-runtime/driver-picoclaw/.env
+
+# =============================================================================
+# GOOGLE OAUTH 2.0
+# Get credentials from: https://console.cloud.google.com/apis/credentials
+# =============================================================================
+
+GOOGLE_CLIENT_ID=your_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your_client_secret
+
+# Session secret (min 32 characters, generate with: openssl rand -base64 32)
+SESSION_SECRET=your_super_secret_session_key_min_32_characters_here
+
+# OAuth callback URL (must match Google Console)
+OAUTH_CALLBACK_URL=https://claw.smarterbot.cl/auth/callback
+
+# =============================================================================
+# GOOGLE AI STUDIO INTEGRATION
+# Get from: https://aistudio.google.com/apps/cc8ce04a-e4b2-4c16-be7c-17f8212da670
+# =============================================================================
+
+AI_STUDIO_API_KEY=your_ai_studio_api_key_here
+AI_STUDIO_APP_ID=cc8ce04a-e4b2-4c16-be7c-17f8212da670
+
+# =============================================================================
+# SERVER CONFIG
+# =============================================================================
+
+PORT=18790
+NODE_ENV=production
