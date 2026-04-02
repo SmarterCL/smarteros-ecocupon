@@ -1,0 +1,39 @@
+name: 💓 Agent Heartbeat
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  heartbeat:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Health check - EcoCupon
+        id: ecocupon
+        continue-on-error: true
+        run: |
+          curl --fail --max-time 5 https://ecocupon.cl/health || echo "DOWN"
+
+      - name: Health check - QR Gateway
+        id: qr
+        continue-on-error: true
+        run: |
+          curl --fail --max-time 5 https://qr.ecocupon.cl/health || echo "DOWN"
+
+      - name: Health check - EcoCanasta
+        id: ecocanasta
+        continue-on-error: true
+        run: |
+          curl --fail --max-time 5 https://ecocanasta.ecocupon.cl/health || echo "DOWN"
+
+      - name: Create issue if unhealthy
+        if: failure()
+        uses: peter-evans/create-issue-from-file@v5
+        with:
+          title: 🚨 Service Health Check Failed - ${{ github.run_id }}
+          content-filepath: .github/ISSUE_TEMPLATE/health-alert.md
+          labels: agent, health, critical, auto
