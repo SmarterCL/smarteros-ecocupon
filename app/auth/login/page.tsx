@@ -157,7 +157,7 @@ function LoginForm() {
 
           <p className="text-center text-sm text-muted-foreground">
             {"No tienes cuenta? "}
-            <Link href="/auth/sign-up" className="font-medium text-primary underline-offset-4 hover:underline">
+            <Link href="/auth/registro" className="font-medium text-primary underline-offset-4 hover:underline">
               Registrate
             </Link>
           </p>

@@ -570,3 +570,34 @@ async function main() {
 }
 
 main().catch(console.error);
+
+/**
+ * Herramienta: exec_sql
+ * Ejecuta SQL arbitrario (solo service_role)
+ */
+server.tool(
+  "exec_sql",
+  "Ejecuta una consulta SQL arbitraria en Supabase (requiere service_role key)",
+  {
+    sql: z.string().describe("La consulta SQL a ejecutar")
+  },
+  async ({ sql }) => {
+    try {
+      const { data, error } = await supabase.rpc('exec_sql', { query: sql });
+      if (error) throw error;
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({ success: true, data })
+        }]
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({ success: false, error: error.message })
+        }]
+      };
+    }
+  }
+);
