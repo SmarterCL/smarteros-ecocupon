@@ -114,8 +114,17 @@ export default function ScanPage() {
     }
 
     const supabase = createClient()
+    if (!supabase) {
+      toast({
+        title: "Error de conexión",
+        description: "No se pudo conectar con el servidor de autenticación",
+        variant: "destructive"
+      })
+      return
+    }
+
     const response = await supabase.auth.getUser()
-    const user = response.data.user
+    const user = response.data?.user
 
     if (!user) {
       toast({

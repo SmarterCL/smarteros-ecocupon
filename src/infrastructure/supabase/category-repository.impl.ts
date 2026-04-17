@@ -13,7 +13,7 @@ import type { ICategoryRepository } from '@/domains/catalog/repositories/categor
 import { createClient as createBrowserClient } from '@/lib/supabase/client'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SupabaseClient = any
+type SupabaseClient = any | null
 
 /**
  * Implementación del repositorio de categorías con Supabase

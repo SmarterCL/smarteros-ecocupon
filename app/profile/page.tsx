@@ -31,6 +31,10 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const supabase = createClient()
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
 
     // Check auth
     supabase.auth.getUser().then((response: any) => {
@@ -46,7 +50,7 @@ export default function ProfilePage() {
     const loadProfile = async () => {
       try {
         const response = await supabase.auth.getUser()
-        const user = response.data.user
+        const user = response.data?.user
         if (!user) return
 
         // Get profile stats

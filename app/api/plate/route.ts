@@ -150,6 +150,14 @@ export async function POST(request: NextRequest) {
 
     // Get user from session
     const supabase = await createClient()
+    if (!supabase) {
+      return NextResponse.json<PlateValidationResponse>({
+        success: false,
+        valid: false,
+        message: 'No hay conexión con el servicio de autenticación',
+        error: 'AUTH_SERVICE_UNAVAILABLE'
+      }, { status: 503 })
+    }
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     // Check daily limit for authenticated users

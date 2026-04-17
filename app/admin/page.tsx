@@ -15,6 +15,10 @@ export const revalidate = 0 // Don't cache admin pages
 async function verifyAdminAccess() {
   const supabase = await createClient()
   
+  if (!supabase) {
+    redirect("/auth/login?error=Error de conexión con el servidor")
+  }
+
   const { data: { user } } = await supabase.auth.getUser()
   
   if (!user) {
@@ -37,6 +41,9 @@ async function verifyAdminAccess() {
 
 async function getStats() {
   const supabase = await createClient()
+  if (!supabase) {
+    return { productCount: 0, categoryCount: 0, discountCount: 0, averagePrice: 0 }
+  }
 
   // Get product count
   const { count: productCount } = await supabase.from("products").select("*", { count: "exact", head: true })
