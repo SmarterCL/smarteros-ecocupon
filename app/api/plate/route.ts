@@ -43,7 +43,6 @@ async function fetchPlateInfo(plate: string): Promise<PlateInfo | null> {
   
   console.log('🔑 BOOTSTR_API_KEY configurada:', !!apiKey)
   console.log('🔑 BOOTSTR_API_KEY length:', apiKey?.length)
-  console.log('🔑 BOOTSTR_API_KEY first chars:', apiKey?.substring(0, 10) + '...')
   
   if (!apiKey) {
     console.error('❌ BOOTSTR_API_KEY no configurada en environment variables')

@@ -155,3 +155,10 @@ BEGIN
   WHERE id = user_id_param;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 8. Gestión de Secretos con Vault (Opcional - Recomendado)
+-- Para guardar tus API Keys o Secrets de Google en el Vault de Supabase:
+-- 1. Habilita la extensión vault en la sección Extensions.
+-- 2. Usa este comando SQL como referencia para guardar tus llaves:
+--    SELECT vault.create_secret('TU_CLIENT_SECRET_AQUI', 'google_client_secret', 'Secreto de OAuth para Google Login');
+-- Luego puedes acceder a ellas de forma segura desde Edge Functions.
