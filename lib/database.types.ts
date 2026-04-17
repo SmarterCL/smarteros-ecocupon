@@ -141,6 +141,147 @@ export interface Database {
           }
         ]
       }
+      profiles: {
+        Row: {
+          id: string
+          email: string
+          full_name: string | null
+          role: 'user' | 'admin'
+          total_points: number
+          total_recycled: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          email: string
+          full_name?: string | null
+          role?: 'user' | 'admin'
+          total_points?: number
+          total_recycled?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          email?: string
+          full_name?: string | null
+          role?: 'user' | 'admin'
+          total_points?: number
+          total_recycled?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          id: string
+          email: string
+          full_name: string | null
+          points: number
+          qr_code: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          email: string
+          full_name?: string | null
+          points?: number
+          qr_code?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          email?: string
+          full_name?: string | null
+          points?: number
+          qr_code?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      recycling_events: {
+        Row: {
+          id: string
+          user_id: string | null
+          plate: string | null
+          material_type: string
+          weight_kg: number | null
+          points_earned: number
+          photo_url: string | null
+          status: string
+          source: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          plate?: string | null
+          material_type: string
+          weight_kg?: number | null
+          points_earned?: number
+          photo_url?: string | null
+          status?: string
+          source?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          plate?: string | null
+          material_type?: string
+          weight_kg?: number | null
+          points_earned?: number
+          photo_url?: string | null
+          status?: string
+          source?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      coupons: {
+        Row: {
+          id: string
+          user_id: string | null
+          code: string
+          type: string
+          value: number
+          min_purchase: number
+          status: 'active' | 'used' | 'expired'
+          expires_at: string | null
+          created_at: string
+          used_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          code: string
+          type: string
+          value: number
+          min_purchase?: number
+          status?: 'active' | 'used' | 'expired'
+          expires_at?: string | null
+          created_at?: string
+          used_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          code?: string
+          type?: string
+          value?: number
+          min_purchase?: number
+          status?: 'active' | 'used' | 'expired'
+          expires_at?: string | null
+          created_at?: string
+          used_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
