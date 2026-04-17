@@ -282,6 +282,39 @@ export interface Database {
         }
         Relationships: []
       }
+      plate_detection_logs: {
+        Row: {
+          id: string
+          user_id: string | null
+          detected_plate: string
+          original_input: string | null
+          confidence: number | null
+          status: string
+          api_response: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          detected_plate: string
+          original_input?: string | null
+          confidence?: number | null
+          status?: string
+          api_response?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          detected_plate?: string
+          original_input?: string | null
+          confidence?: number | null
+          status?: string
+          api_response?: Json | null
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

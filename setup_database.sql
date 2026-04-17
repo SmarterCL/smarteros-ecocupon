@@ -116,7 +116,29 @@ CREATE POLICY "Los usuarios pueden ver sus propios cupones"
   ON public.coupons FOR SELECT 
   USING (auth.uid() = user_id);
 
--- 6. Función para auto-incrementar puntos del usuario
+-- 6. Tabla de Logs de Detección de Placas
+CREATE TABLE IF NOT EXISTS public.plate_detection_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  detected_plate TEXT NOT NULL,
+  original_input TEXT,
+  confidence NUMERIC,
+  status TEXT DEFAULT 'success',
+  api_response JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE public.plate_detection_logs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Los usuarios pueden ver sus propios logs" 
+  ON public.plate_detection_logs FOR SELECT 
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Sistema inserta logs" 
+  ON public.plate_detection_logs FOR INSERT 
+  WITH CHECK (true);
+
+-- 7. Función para auto-incrementar puntos del usuario
 CREATE OR REPLACE FUNCTION public.increment_user_points(user_id_param UUID, points_to_add INTEGER)
 RETURNS void AS $$
 BEGIN
