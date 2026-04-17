@@ -12,12 +12,8 @@ export async function createClient() {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey || !supabaseUrl.startsWith('http')) {
-    if (process.env.NODE_ENV === 'production') {
-      console.error('CRITICAL: Supabase server-client initialized without valid URL/Key.')
-    } else {
-      console.warn('Supabase local: No valid credentials (using fallback data)')
-    }
-    return null as any
+    console.warn('Supabase Server: Missing credentials. Check Vercel Environment Variables.')
+    return null
   }
 
   const cookieStore = await cookies()

@@ -7,7 +7,8 @@ export async function proxy(request: NextRequest) {
     console.error('CRITICAL: NEXT_PUBLIC_SUPABASE_URL is missing in runtime')
   }
   
-  return await updateSession(request)
+  const response = await updateSession(request)
+  return response || NextResponse.next({ request })
 }
 
 export const config = {

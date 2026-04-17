@@ -5,8 +5,10 @@ export function createClient() {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey || !supabaseUrl.startsWith('http')) {
-    console.error('Supabase browser-client initialized without valid URL/Key.')
-    return null as any
+    if (typeof window !== 'undefined') {
+      console.warn('Supabase: Missing environment variables. Rendering in offline/demo mode.')
+    }
+    return null
   }
 
   return createBrowserClient(supabaseUrl, supabaseAnonKey)

@@ -21,7 +21,11 @@ export function SiteHeader() {
 
     // Auth state management
     const supabase = createClient()
-    supabase.auth.getUser().then((response: UserResponse) => setUser(response.data.user))
+    if (!supabase) return
+
+    supabase.auth.getUser().then((response: UserResponse) => {
+      if (response.data?.user) setUser(response.data.user)
+    })
 
     const {
       data: { subscription },
@@ -37,6 +41,7 @@ export function SiteHeader() {
 
   async function handleSignOut() {
     const supabase = createClient()
+    if (!supabase) return
     await supabase.auth.signOut()
     setUser(null)
     router.push("/")
