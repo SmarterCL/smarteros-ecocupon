@@ -7,13 +7,12 @@ import { cookies } from 'next/headers'
  * Never store in global variables (especially with Fluid compute).
  * Keys are managed via Supabase Vault - never hardcode.
  */
-export async function createClient() {
+export async function createClient(): Promise<ReturnType<typeof createServerClient>> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey || !supabaseUrl.startsWith('http')) {
-    console.warn('Supabase Server: Missing credentials. Check Vercel Environment Variables.')
-    return null
+    throw new Error('Supabase Server: Missing credentials. Check Vercel Environment Variables.')
   }
 
   const cookieStore = await cookies()
