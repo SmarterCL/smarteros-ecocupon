@@ -5,10 +5,7 @@ export function createClient() {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey || !supabaseUrl.startsWith('http')) {
-    if (typeof window !== 'undefined') {
-      console.warn('Supabase: Missing environment variables. Rendering in offline/demo mode.')
-    }
-    return null
+    throw new Error('Supabase: Missing environment variables. Check .env.local')
   }
 
   return createBrowserClient(supabaseUrl, supabaseAnonKey)
