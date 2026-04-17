@@ -1,5 +1,7 @@
 "use client"
 
+export const dynamic = 'force-dynamic'
+
 import { useState, useRef, useCallback } from "react"
 import { Camera, X, Check, AlertCircle, RefreshCw, Image as ImageIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
